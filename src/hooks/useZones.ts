@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getAllZones, addZone, deleteZone } from '../db/zones.db'
+import { getAllZones, addZone, updateZone, deleteZone } from '../db/zones.db'
 import type { Zone } from '../db/schema'
 
 export function useZones() {
@@ -23,10 +23,15 @@ export function useZones() {
     return zone
   }
 
+  async function renameZone(id: string, name: string) {
+    await updateZone(id, { name })
+    await refresh()
+  }
+
   async function removeZone(id: string) {
     await deleteZone(id)
     await refresh()
   }
 
-  return { zones, loading, refresh, createZone, removeZone }
+  return { zones, loading, refresh, createZone, renameZone, removeZone }
 }

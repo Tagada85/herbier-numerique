@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { PlantCard } from '../components/PlantCard'
 import { usePlants } from '../hooks/usePlants'
 import { useZones } from '../hooks/useZones'
@@ -31,7 +32,15 @@ export function HomePage() {
 
   return (
     <div className="p-4 space-y-4 pb-24">
-      <h1 className="text-xl font-bold text-gray-900">Mon Herbier</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900">Mon Herbier</h1>
+        <Link
+          to="/zones"
+          className="text-sm text-green-600 font-medium hover:text-green-700"
+        >
+          Zones
+        </Link>
+      </div>
 
       <input
         type="text"

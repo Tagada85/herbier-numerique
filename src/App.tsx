@@ -2,6 +2,7 @@ import { Routes, Route, NavLink } from 'react-router-dom'
 import { HomePage } from './pages/HomePage'
 import { CapturePage } from './pages/CapturePage'
 import { PlantDetailPage } from './pages/PlantDetailPage'
+import { ZonesPage } from './pages/ZonesPage'
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/capture" element={<CapturePage />} />
           <Route path="/plants/:id" element={<PlantDetailPage />} />
+          <Route path="/zones" element={<ZonesPage />} />
         </Routes>
       </main>
 
