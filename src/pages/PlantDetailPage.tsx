@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getPlantById } from '../db/plants.db'
+import { getPlantById, updatePlant } from '../db/plants.db'
 import { usePhotos } from '../hooks/usePhotos'
 import { useZones } from '../hooks/useZones'
 import { ConfidenceBadge } from '../components/ConfidenceBadge'
+import { ZoneSelector } from '../components/ZoneSelector'
 import type { Plant } from '../db/schema'
 
 export function PlantDetailPage() {
@@ -12,7 +13,10 @@ export function PlantDetailPage() {
   const [plant, setPlant] = useState<Plant | null>(null)
   const [loading, setLoading] = useState(true)
   const { photos } = usePhotos(id)
-  const { zones } = useZones()
+  const { zones, createZone } = useZones()
+  const [isEditingZones, setIsEditingZones] = useState(false)
+  const [editedZoneIds, setEditedZoneIds] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -23,6 +27,40 @@ export function PlantDetailPage() {
     }
     load()
   }, [id])
+
+  function startEditing() {
+    if (!plant) return
+    setEditedZoneIds(plant.zoneIds)
+    setIsEditingZones(true)
+  }
+
+  function cancelEditing() {
+    setIsEditingZones(false)
+    setEditedZoneIds([])
+  }
+
+  function toggleZone(zoneId: string) {
+    setEditedZoneIds((current) =>
+      current.includes(zoneId)
+        ? current.filter((id) => id !== zoneId)
+        : [...current, zoneId],
+    )
+  }
+
+  async function handleCreateZone(name: string) {
+    const zone = await createZone(name)
+    setEditedZoneIds((current) => [...current, zone.id])
+  }
+
+  async function saveZones() {
+    if (!plant) return
+    setSaving(true)
+    await updatePlant(plant.id, { zoneIds: editedZoneIds })
+    const refreshed = await getPlantById(plant.id)
+    setPlant(refreshed ?? plant)
+    setIsEditingZones(false)
+    setSaving(false)
+  }
 
   if (loading) {
     return (
@@ -97,11 +135,48 @@ export function PlantDetailPage() {
         </div>
       </div>
 
-      {plantZones.length > 0 && (
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
-            Zones
-          </p>
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-gray-400 uppercase tracking-wide">Zones</p>
+          {!isEditingZones && (
+            <button
+              type="button"
+              onClick={startEditing}
+              className="text-sm text-green-600 font-medium"
+            >
+              Modifier
+            </button>
+          )}
+        </div>
+
+        {isEditingZones ? (
+          <div className="space-y-3">
+            <ZoneSelector
+              zones={zones}
+              selectedIds={editedZoneIds}
+              onToggle={toggleZone}
+              onCreate={handleCreateZone}
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={saveZones}
+                disabled={saving}
+                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-green-600 transition-colors"
+              >
+                {saving ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+              <button
+                type="button"
+                onClick={cancelEditing}
+                disabled={saving}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        ) : plantZones.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {plantZones.map((zone) => (
               <span
@@ -112,8 +187,10 @@ export function PlantDetailPage() {
               </span>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-gray-400 italic">Aucune zone assignée</p>
+        )}
+      </div>
 
       <div className="text-xs text-gray-400">
         <p>Ajoutée le {new Date(plant.createdAt).toLocaleDateString('fr-FR')}</p>
