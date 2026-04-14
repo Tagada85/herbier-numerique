@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getAllZones, addZone, updateZone, deleteZone } from '../db/zones.db'
 import type { Zone } from '../db/schema'
 
@@ -6,16 +6,23 @@ export function useZones() {
   const [zones, setZones] = useState<Zone[]>([])
   const [loading, setLoading] = useState(true)
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
+  async function refresh() {
     const all = await getAllZones()
     setZones(all)
     setLoading(false)
-  }, [])
+  }
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    let cancelled = false
+    getAllZones().then((all) => {
+      if (cancelled) return
+      setZones(all)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function createZone(name: string, description = '') {
     const zone = await addZone(name, description)

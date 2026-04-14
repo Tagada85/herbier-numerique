@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   getAllActivities,
   addActivity,
@@ -10,16 +10,23 @@ export function useActivities() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
+  async function refresh() {
     const all = await getAllActivities()
     setActivities(all)
     setLoading(false)
-  }, [])
+  }
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    let cancelled = false
+    getAllActivities().then((all) => {
+      if (cancelled) return
+      setActivities(all)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function createActivity(input: Omit<Activity, 'id' | 'createdAt'>) {
     const activity = await addActivity(input)
