@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   getAllPlants,
   getPlantById,
@@ -14,16 +14,23 @@ export function usePlants() {
   const [plants, setPlants] = useState<Plant[]>([])
   const [loading, setLoading] = useState(true)
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
+  async function refresh() {
     const all = await getAllPlants()
     setPlants(all)
     setLoading(false)
-  }, [])
+  }
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    let cancelled = false
+    getAllPlants().then((all) => {
+      if (cancelled) return
+      setPlants(all)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function cataloguePlant(
     plantData: {

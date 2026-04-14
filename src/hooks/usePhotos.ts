@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getPhotosByPlantId, addPhoto, deletePhoto } from '../db/photos.db'
 import type { Photo } from '../db/schema'
 
@@ -6,21 +6,31 @@ export function usePhotos(plantId: string | undefined) {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
 
-  const refresh = useCallback(async () => {
+  async function refresh() {
     if (!plantId) {
       setPhotos([])
       setLoading(false)
       return
     }
-    setLoading(true)
     const all = await getPhotosByPlantId(plantId)
     setPhotos(all)
     setLoading(false)
-  }, [plantId])
+  }
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    let cancelled = false
+    const load = plantId
+      ? getPhotosByPlantId(plantId)
+      : Promise.resolve<Photo[]>([])
+    load.then((all) => {
+      if (cancelled) return
+      setPhotos(all)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [plantId])
 
   async function addPhotoToPlant(blob: Blob) {
     if (!plantId) return
